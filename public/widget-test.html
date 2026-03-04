@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Terry Transaction Slider - Test</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f8faf8;
+      color: #1f2937;
+    }
+    .hero {
+      text-align: center;
+      padding: 80px 20px 40px;
+    }
+    .hero h1 {
+      font-size: 2.5rem;
+      font-weight: 800;
+      margin-bottom: 12px;
+    }
+    .hero h1 span { color: #16a34a; }
+    .hero p {
+      font-size: 1.1rem;
+      color: #6b7280;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    .slider-section {
+      padding: 20px 0;
+      background: #f0fdf4;
+      border-top: 1px solid #dcfce7;
+      border-bottom: 1px solid #dcfce7;
+    }
+    .content {
+      max-width: 800px;
+      margin: 60px auto;
+      padding: 0 20px;
+      text-align: center;
+      color: #6b7280;
+    }
+  </style>
+</head>
+<body>
+  <div class="hero">
+    <h1><span>Terry</span> Transaction Slider</h1>
+    <p>Recente cashback donaties van onze community</p>
+  </div>
+
+  <div class="slider-section">
+    <div id="terry-slider"></div>
+  </div>
+
+  <div class="content">
+    <p>De slider scrollt automatisch en pauzeert bij hover. Confetti verschijnt eenmalig.</p>
+  </div>
+
+  <script src="/terry-slider.js"></script>
+</body>
+</html>
