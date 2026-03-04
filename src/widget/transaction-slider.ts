@@ -74,7 +74,9 @@ class TerryTransactionSlider {
       });
       const json = await res.json();
       if (json.success === 1 && Array.isArray(json.data) && json.data.length > 0) {
-        this.transactions = json.data;
+        this.transactions = json.data.sort((a: Transaction, b: Transaction) =>
+          new Date(b.date).getTime() - new Date(a.date).getTime()
+        );
         return;
       }
     } catch {
