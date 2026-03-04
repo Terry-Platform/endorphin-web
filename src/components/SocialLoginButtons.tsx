@@ -7,7 +7,7 @@ export function SocialLoginButtons() {
   const [status, setStatus] = useState<'idle' | 'waiting' | 'error'>('idle');
   const [errorMsg, setErrorMsg] = useState('');
   const popupRef = useRef<Window | null>(null);
-  const pollRef = useRef<ReturnType<typeof setInterval>>();
+  const pollRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
   const handledRef = useRef(false);
 
   const handleTokenReceived = useCallback((token: string, source: string) => {

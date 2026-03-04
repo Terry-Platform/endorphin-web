@@ -25,14 +25,12 @@ class TerryTransactionSlider {
   private confettiFired = false;
   private apiUrl: string;
   private pollInterval: number;
-  private useMock: boolean;
 
   constructor(el: HTMLElement) {
     this.container = el;
     this.shadow = el.attachShadow({ mode: 'open' });
     this.apiUrl = el.dataset.apiUrl || DEFAULT_API_URL;
     this.pollInterval = parseInt(el.dataset.pollInterval || String(DEFAULT_POLL_INTERVAL), 10);
-    this.useMock = el.dataset.useMock === 'true';
     this.init();
   }
 
