@@ -4,6 +4,7 @@ export interface Transaction {
   cashback: number;
   project_name: string | null;
   date: string;
+  status?: string;
 }
 
 export const MOCK_TRANSACTIONS: Transaction[] = [
