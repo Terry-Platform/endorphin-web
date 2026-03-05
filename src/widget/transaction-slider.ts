@@ -19,6 +19,7 @@ class TerryTransactionSlider {
   private shadow: ShadowRoot;
   private container: HTMLElement;
   private transactions: Transaction[] = [];
+  private knownKeys = new Set<string>();
   private track: HTMLElement | null = null;
   private sliderEl: HTMLElement | null = null;
   private pollTimer: ReturnType<typeof setInterval> | null = null;
@@ -137,6 +138,47 @@ class TerryTransactionSlider {
     }
   }
 
+  private txKey(tx: Transaction): string {
+    return `${tx.store_name}|${tx.date}|${tx.cashback}`;
+  }
+
+  private buildDisplayOrder(): Transaction[] {
+    const newTxs: Transaction[] = [];
+    const knownTxs: Transaction[] = [];
+
+    for (const tx of this.transactions) {
+      const key = this.txKey(tx);
+      if (this.knownKeys.has(key)) {
+        knownTxs.push(tx);
+      } else {
+        newTxs.push(tx);
+        this.knownKeys.add(key);
+      }
+    }
+
+    // New transactions sorted newest first, known ones shuffled randomly
+    newTxs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    knownTxs.sort(() => Math.random() - 0.5);
+
+    // 2 random buffer cards → new transactions → remaining known (random)
+    const prefix = knownTxs.splice(0, 2);
+    const sequence = [...prefix, ...newTxs, ...knownTxs];
+
+    return this.limitStoreRepetition(sequence, 2);
+  }
+
+  private limitStoreRepetition(txs: Transaction[], max: number): Transaction[] {
+    const counts = new Map<string, number>();
+    return txs.filter(tx => {
+      const n = counts.get(tx.store_name) ?? 0;
+      if (n < max) {
+        counts.set(tx.store_name, n + 1);
+        return true;
+      }
+      return false;
+    });
+  }
+
   private formatCurrency(amount: number): string {
     return new Intl.NumberFormat('nl-NL', {
       style: 'currency',
@@ -185,16 +227,18 @@ class TerryTransactionSlider {
     this.track = document.createElement('div');
     this.track.className = 'terry-track';
 
+    const displayOrder = this.buildDisplayOrder();
+
     // Render cards twice for seamless infinite loop
     for (let copy = 0; copy < 2; copy++) {
-      for (const tx of this.transactions) {
+      for (const tx of displayOrder) {
         this.track.appendChild(this.createCard(tx));
       }
     }
 
     // Calculate animation duration based on content width
     const cardWidth = 280 + 14; // min-width + gap
-    const totalWidth = this.transactions.length * cardWidth;
+    const totalWidth = displayOrder.length * cardWidth;
     const duration = totalWidth / PIXELS_PER_SECOND;
     this.track.style.setProperty('--scroll-duration', `${duration}s`);
 
@@ -204,13 +248,11 @@ class TerryTransactionSlider {
 
   private startPolling(): void {
     this.pollTimer = setInterval(async () => {
-      const oldFirst = this.transactions[0];
-
       await this.fetchTransactions();
 
-      // Only re-render if data actually changed
-      const newFirst = this.transactions[0];
-      if (oldFirst && newFirst && (oldFirst.store_name !== newFirst.store_name || oldFirst.cashback !== newFirst.cashback || oldFirst.date !== newFirst.date)) {
+      // Re-render if there are any transactions not yet displayed
+      const hasNew = this.transactions.some(tx => !this.knownKeys.has(this.txKey(tx)));
+      if (hasNew) {
         this.render();
       }
     }, this.pollInterval * 1000);
