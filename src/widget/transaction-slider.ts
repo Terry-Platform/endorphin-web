@@ -3,7 +3,7 @@ import { fireConfetti } from './confetti';
 import { type Transaction } from './mock-data';
 
 const DEFAULT_API_URL = 'https://api.terry.earth';
-const DEFAULT_POLL_INTERVAL = 60;
+const DEFAULT_POLL_INTERVAL = 120;
 const PIXELS_PER_SECOND = 40;
 
 interface StoreInfo {
@@ -19,7 +19,6 @@ class TerryTransactionSlider {
   private shadow: ShadowRoot;
   private container: HTMLElement;
   private transactions: Transaction[] = [];
-  private knownKeys = new Set<string>();
   private track: HTMLElement | null = null;
   private sliderEl: HTMLElement | null = null;
   private pollTimer: ReturnType<typeof setInterval> | null = null;
@@ -138,33 +137,26 @@ class TerryTransactionSlider {
     }
   }
 
-  private txKey(tx: Transaction): string {
-    return `${tx.store_name}|${tx.date}|${tx.cashback}`;
-  }
-
   private buildDisplayOrder(): Transaction[] {
-    const newTxs: Transaction[] = [];
-    const knownTxs: Transaction[] = [];
+    if (this.transactions.length === 0) return [];
 
-    for (const tx of this.transactions) {
-      const key = this.txKey(tx);
-      if (this.knownKeys.has(key)) {
-        knownTxs.push(tx);
-      } else {
-        newTxs.push(tx);
-        this.knownKeys.add(key);
-      }
-    }
+    // Find the most recent date (date part only: YYYY-MM-DD)
+    const latestDate = this.transactions
+      .map(tx => tx.date.substring(0, 10))
+      .sort()
+      .at(-1)!;
 
-    // New transactions sorted newest first, known ones shuffled randomly
-    newTxs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    knownTxs.sort(() => Math.random() - 0.5);
+    // All transactions with that date go first, sorted newest-first by full timestamp
+    const latestDateTxs = this.transactions
+      .filter(tx => tx.date.startsWith(latestDate))
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-    // 2 random buffer cards → new transactions → remaining known (random)
-    const prefix = knownTxs.splice(0, 2);
-    const sequence = [...prefix, ...newTxs, ...knownTxs];
+    // Remaining transactions randomized
+    const olderTxs = this.transactions
+      .filter(tx => !tx.date.startsWith(latestDate))
+      .sort(() => Math.random() - 0.5);
 
-    return this.limitStoreRepetition(sequence, 2);
+    return this.limitStoreRepetition([...latestDateTxs, ...olderTxs], 2);
   }
 
   private limitStoreRepetition(txs: Transaction[], max: number): Transaction[] {
@@ -249,12 +241,7 @@ class TerryTransactionSlider {
   private startPolling(): void {
     this.pollTimer = setInterval(async () => {
       await this.fetchTransactions();
-
-      // Re-render if there are any transactions not yet displayed
-      const hasNew = this.transactions.some(tx => !this.knownKeys.has(this.txKey(tx)));
-      if (hasNew) {
-        this.render();
-      }
+      this.render();
     }, this.pollInterval * 1000);
   }
 
